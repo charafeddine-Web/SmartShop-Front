@@ -1,35 +1,51 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ClientDashboard from './pages/client/ClientDashboard';
+import ProtectedRoute from './routes/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#080a0f] flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<HomePage />} />
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? (
+            <Navigate to={user?.role === 'ADMIN' ? '/admin' : '/client'} replace />
+          ) : (
+            <LoginPage />
+          )
+        }
+      />
+
+      {/* Protected Admin Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Route>
+
+      {/* Protected Client Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
+        <Route path="/client" element={<ClientDashboard />} />
+      </Route>
+
+      {/* Catch-all redirect */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;
